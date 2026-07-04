@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHeaderView
 from PyQt5.QtCore import Qt
 from ui_main import Ui_mainWindow
+import database
 
 class MainWindow(QMainWindow, Ui_mainWindow):
     def __init__(self):
@@ -24,6 +25,10 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.label_3.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.label_4.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.label_6.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+
+        self.db = database.Database()
+        self.db._init_db_()
+
         self._bind_signals()
 
     def _bind_signals(self):
