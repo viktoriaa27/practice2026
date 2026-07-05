@@ -21,12 +21,22 @@
        <widget class="QComboBox" name="comboBox">
         <item>
          <property name="text">
-          <string>сортировка по оттенку</string>
+          <string>все</string>
          </property>
         </item>
         <item>
          <property name="text">
-          <string>сортировка по типу материала</string>
+          <string>по цвету (а-я)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>по цвету (я-а)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>по названию</string>
          </property>
         </item>
        </widget>

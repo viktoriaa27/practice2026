@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QHeaderView
+from PyQt5.QtWidgets import QApplication, QMainWindow, QHeaderView, QMessageBox, QTableWidgetItem
 from PyQt5.QtCore import Qt
 from ui_main import Ui_mainWindow
 import database
@@ -31,56 +31,140 @@ class MainWindow(QMainWindow, Ui_mainWindow):
 
         self._bind_signals()
 
+        self._refresh_()
+
     def _bind_signals(self):
         self.pushButton.clicked.connect(self._add_)
         self.pushButton_2.clicked.connect(self._delete_)
         self.pushButton_3.clicked.connect(self._upload_)
         self.pushButton_4.clicked.connect(self._close_)
         self.pushButton_5.clicked.connect(self._change_)
-        self.lineEdit.returnPressed.connect(self._type_)
-        self.lineEdit_2.returnPressed.connect(self._name_)
-        self.lineEdit_3.returnPressed.connect(self._color_)
-        self.lineEdit_4.returnPressed.connect(self._date_)
-        self.spinBox.valueChanged.connect(self._stock_)
         self.comboBox.currentIndexChanged.connect(self._sort_)
+        self.tableWidget.itemSelectionChanged.connect(self._row_select_)
+
+    def _sort_(self, index):
+        if index == 1:
+            self._refresh_(order_by='color ASC')
+        elif index == 2:
+            self._refresh_(order_by='color DESC')
+        elif index == 3:
+            self._refresh_(order_by='name')
+        else:
+            self._refresh_()
 
     def _add_(self):
-        print('добавить')
+        if not self.lineEdit.text().strip():
+            QMessageBox.warning(self, 'ошибка!', 'поле должно быть заполнено!')
+            self.lineEdit.setFocus()
+            return
+
+        if not self.lineEdit_2.text().strip():
+            QMessageBox.warning(self, 'ошибка!', 'поле должно быть заполнено!')
+            self.lineEdit_2.setFocus()
+            return
+
+        if not self.lineEdit_3.text().strip():
+            QMessageBox.warning(self, 'ошибка!', 'поле должно быть заполнено!')
+            self.lineEdit_3.setFocus()
+            return
+
+        if not self.lineEdit_4.text().strip():
+            QMessageBox.warning(self, 'ошибка!', 'поле должно быть заполнено!')
+            self.lineEdit_4.setFocus()
+            return
+
+        if self.spinBox.value() <= 0:
+            QMessageBox.warning(self, 'ошибка!', 'поле должно быть заполнено!')
+            self.spinBox.setFocus()
+            return
+
+        data = {'name': self.lineEdit_2.text().strip(), 'type': self.lineEdit.text().strip(), 'color': self.lineEdit_4.text().strip(), 'stock': self.spinBox.value(), 'date': self.lineEdit_3.text().strip()}
+        try:
+            self.db._insert_(data)
+            self._refresh_()
+            self._clear_()
+            QMessageBox.information(self, 'ура!', 'запись добавлена')
+        except Exception as e:
+            QMessageBox.critical(self, 'ошибка', f'не удалось добавить запись:\n{e}')
 
     def _delete_(self):
-        print('удалить')
+        select = self.tableWidget.selectionModel().selectedRows()
+        if not select:
+            QMessageBox.warning(self, 'внимание!', 'вы не выбрали строку!')
+            return
+        if QMessageBox.question(self, 'подтвердите выбор', 'вы точно хотите удалить данную запись?') == QMessageBox.Yes:
+            row = select[0].row()
+            self.db._delete_(self.tableWidget.item(row, 0).data(Qt.UserRole))
+            self._refresh_()
+            self._clear_()
+            QMessageBox.information(self, 'ура?', 'запись удалена')
 
     def _upload_(self):
         print('загрузить')
 
     def _close_(self):
-        print('закрыть')
+        self.close()
 
     def _change_(self):
-        print('изменить')
+        select = self.tableWidget.selectionModel().selectedRows()
+        if not select:
+            QMessageBox.warning(self, 'внимание!', 'вы не выбрали строку!')
+            return
+        row = select[0].row()
+        data = {'id': self.tableWidget.item(row, 0).data(Qt.UserRole), 'name': self.lineEdit_2.text().strip(), 'type': self.lineEdit.text().strip(),
+                'color': self.lineEdit_4.text().strip(), 'stock': self.spinBox.value(),
+                'date': self.lineEdit_3.text().strip()}
+        self.db._update_(data)
+        self._refresh_()
+        QMessageBox.information(self, 'успешно', 'запись обновлена')
 
-    def _type_(self):
-        text = self.lineEdit.text()
-        print(text)
+    def _row_select_(self):
+        select = self.tableWidget.selectionModel().selectedRows()
+        if not select:
+            return
+        row = select[0].row()
+        self.lineEdit.setText(self.tableWidget.item(row, 0).text())
+        self.lineEdit_2.setText(self.tableWidget.item(row, 1).text())
+        self.lineEdit_4.setText(self.tableWidget.item(row, 3).text())
+        self.lineEdit_3.setText(self.tableWidget.item(row, 4).text())
+        item = self.tableWidget.item(row, 2)
+        if item:
+            try:
+                self.spinBox.setValue(int(item.text()))
+            except ValueError:
+                self.spinBox.setValue(0)
+        else:
+            self.spinBox.setValue(0)
 
-    def _name_(self):
-        text = self.lineEdit_2.text()
-        print(text)
+    def _refresh_(self, order_by=None):
+        self.tableWidget.setRowCount(0)
+        items = self.db._get_(order_by)
+        if items is None:
+            items = []
+        for i, j in enumerate(items):
+            self.tableWidget.insertRow(i)
+            item = QTableWidgetItem(j['type'])
+            item.setData(Qt.UserRole, j['id'])
+            self.tableWidget.setItem(i, 0, item)
+            self.tableWidget.setItem(i, 1, QTableWidgetItem(j['name']))
+            self.tableWidget.setItem(i, 2, QTableWidgetItem(str(j['stock'])))
+            self.tableWidget.setItem(i, 3, QTableWidgetItem(j['color']))
+            self.tableWidget.setItem(i, 4, QTableWidgetItem(j['date']))
 
-    def _color_(self):
-        text = self.lineEdit_3.text()
-        print(text)
 
-    def _date_(self):
-        text = self.lineEdit_4.text()
-        print(text)
+    def _clear_(self):
+        self.lineEdit.clear()
+        self.lineEdit_2.clear()
+        self.lineEdit_3.clear()
+        self.lineEdit_4.clear()
+        self.spinBox.setValue(0)
 
-    def _stock_(self):
-        text = self.spinBox.value()
-        print(text)
-
-    def _sort_(self):
-        print('сортировка')
+    def closeEvent(self, event):
+        asking = QMessageBox.question(self, 'выход', 'вы точно хотите закрыть приложение?')
+        if asking == QMessageBox.Yes:
+            event.accept()
+        else:
+            event.ignore()
 
 def main():
     app = QApplication(sys.argv)

@@ -25,6 +25,8 @@ class Ui_mainWindow(object):
         self.comboBox.setObjectName("comboBox")
         self.comboBox.addItem("")
         self.comboBox.addItem("")
+        self.comboBox.addItem("")
+        self.comboBox.addItem("")
         self.verticalLayout.addWidget(self.comboBox)
         self.tableWidget = QtWidgets.QTableWidget(self.centralwidget)
         self.tableWidget.setStyleSheet("")
@@ -108,8 +110,10 @@ class Ui_mainWindow(object):
     def retranslateUi(self, mainWindow):
         _translate = QtCore.QCoreApplication.translate
         mainWindow.setWindowTitle(_translate("mainWindow", "MainWindow"))
-        self.comboBox.setItemText(0, _translate("mainWindow", "сортировка по оттенку"))
-        self.comboBox.setItemText(1, _translate("mainWindow", "сортировка по типу материала"))
+        self.comboBox.setItemText(0, _translate("mainWindow", "все"))
+        self.comboBox.setItemText(1, _translate("mainWindow", "по цвету (а-я)"))
+        self.comboBox.setItemText(2, _translate("mainWindow", "по цвету (я-а)"))
+        self.comboBox.setItemText(3, _translate("mainWindow", "по названию"))
         item = self.tableWidget.horizontalHeaderItem(0)
         item.setText(_translate("mainWindow", "материал"))
         item = self.tableWidget.horizontalHeaderItem(1)
