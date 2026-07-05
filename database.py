@@ -8,7 +8,7 @@ class Database:
         self.base = sqlite3.connect('accounting.db')
         self.base.row_factory = sqlite3.Row
         cursor = self.base.cursor()
-        cursor.execute('''CREATE TABLE IF NOT EXISTS accounting (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, type TEXT NOT NULL, color TEXT NOT NULL, stock INTEGER NOT NULL, date TEXT NOT NULL, image_path TEXT)''')
+        cursor.execute('''CREATE TABLE IF NOT EXISTS accounting (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, type TEXT NOT NULL, color TEXT , stock INTEGER NOT NUll, date TEXT, image_path TEXT)''')
         self.base.commit()
 
     def _get_(self, order_type=None):
@@ -34,10 +34,15 @@ class Database:
 
     def _insert_(self, data):
         cursor = self.base.cursor()
-        cursor.execute('''INSERT INTO accounting (name, type, color, stock, date) VALUES (?, ?, ?, ?, ?)''', (data['name'], data['type'], data['color'], int(data['stock']), data['date']))
+        cursor.execute('''INSERT INTO accounting (name, type, color, stock, date, image_path) VALUES (?, ?, ?, ?, ?, ?)''', (data['name'], data['type'], data['color'], int(data['stock']), data['date'], data['image_path']))
         self.base.commit()
 
     def _update_(self, data):
         cursor = self.base.cursor()
-        cursor.execute('''UPDATE accounting SET name=?, type=?, color=?, stock=?, date=? WHERE id=?''', (data['name'], data['type'], data['color'], int(data['stock']), data['date'], data['id']))
+        cursor.execute('''UPDATE accounting SET name=?, type=?, color=?, stock=?, date=?, image_path=? WHERE id=?''', (data['name'], data['type'], data['color'], int(data['stock']), data['date'], data['image_path'], data['id']))
         self.base.commit()
+
+    def _image_(self, im_id):
+        cursor = self.base.cursor()
+        cursor.execute('''SELECT * FROM accounting WHERE id=?''', (im_id,))
+        return cursor.fetchone()
