@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+.venv/
+env/
+.env
+
+# База данных и фото (пользовательские данные)
+*.db
+*.sqlite
+images/
+
+# Файлы IDE
+.vscode/
+.idea/
+*.swp
+
+# Системные
+.DS_Store
+Thumbs.db
+
+# Логи и билды
+*.log
+dist/
+build/
+*.spec
