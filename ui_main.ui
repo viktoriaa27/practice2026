@@ -78,21 +78,21 @@
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="btn_add">
         <property name="text">
          <string>добавить</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_5">
+       <widget class="QPushButton" name="btn_edit">
         <property name="text">
          <string>изменить</string>
         </property>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton_2">
+       <widget class="QPushButton" name="btn_delete">
         <property name="text">
          <string>удалить</string>
         </property>
@@ -109,14 +109,14 @@
        <item>
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
-          <widget class="QLabel" name="label_5">
+          <widget class="QLabel" name="lbl_image">
            <property name="text">
             <string>фотокарточка</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_3">
+          <widget class="QPushButton" name="btn_load">
            <property name="text">
             <string>загрузить фото</string>
            </property>
@@ -161,18 +161,18 @@
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
-         <widget class="QLineEdit" name="lineEdit"/>
-         <widget class="QLineEdit" name="lineEdit_2"/>
-         <widget class="QSpinBox" name="spinBox"/>
-         <widget class="QLineEdit" name="lineEdit_4"/>
-         <widget class="QLineEdit" name="lineEdit_3"/>
+         <widget class="QLineEdit" name="le_type"/>
+         <widget class="QLineEdit" name="le_name"/>
+         <widget class="QSpinBox" name="sb_stock"/>
+         <widget class="QLineEdit" name="le_color"/>
+         <widget class="QLineEdit" name="le_date"/>
         </widget>
        </item>
       </layout>
      </widget>
     </item>
     <item>
-     <widget class="QPushButton" name="pushButton_4">
+     <widget class="QPushButton" name="btn_close">
       <property name="text">
        <string>закрыть</string>
       </property>
