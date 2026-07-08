@@ -1,6 +1,7 @@
 import sys
 import os
 
+from datetime import datetime
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import (
@@ -21,7 +22,17 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.setWindowTitle('Учёт художественных материалов')
         self.resize(850, 650)
         self.setMinimumSize(850, 650)
-        self.setMaximumSize(1700, 1300)
+
+        #подключаем базу данных
+        self.db = database.Database()
+        self.db.init_db()
+
+        self._setup_ui()
+        self._bind_signals()
+        self._refresh_table()
+
+    def _setup_ui(self):
+        #доработка конвертированного интерфейса
         self.setStyleSheet('QMainWindow {background-color: #F0E68C;}'
                            'QTableWidget {gridline-color: #8DB76B;}'
                            )
@@ -40,13 +51,8 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.label_4.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.label_6.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
-        self.db = database.Database()
-        self.db.init_db()
-
-        self._bind_signals()
-        self._refresh_table()
-
     def _bind_signals(self):
+        #привязка сигналов
         self.btn_add.clicked.connect(self._on_add)
         self.btn_delete.clicked.connect(self._on_delete)
         self.btn_load.clicked.connect(self._on_load_image)
@@ -56,6 +62,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.tableWidget.itemSelectionChanged.connect(self._on_select_row)
 
     def _on_sort(self, index):
+        #сортировка записей
         if index == 1:
             self._refresh_table(order_by='color ASC')
         elif index == 2:
@@ -66,6 +73,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
             self._refresh_table()
 
     def _on_add(self):
+        #добавление записи
         if not self.le_type.text().strip():
             QMessageBox.warning(self,
                                 'ошибка!',
@@ -86,13 +94,26 @@ class MainWindow(QMainWindow, Ui_mainWindow):
                                 'количество не может быть отрицательным')
             self.sb_stock.setFocus()
             return
+        date_match = self.le_date.text().strip()
+        valid_date = None
+        if date_match:
+            fmt = '%Y-%m-%d'
+            try:
+                parsed_date = datetime.strptime(date_match, fmt)
+                valid_date = parsed_date.strftime(fmt)
+            except ValueError:
+                QMessageBox.warning(self,
+                                    'ошибка',
+                                    'даты не существует')
+                self.le_date.setFocus()
+                return
 
         image_path = self.image_path
         data = {'name': self.le_name.text().strip(),
                 'type': self.le_type.text().strip(),
                 'color': self.le_color.text().strip(),
                 'stock': self.sb_stock.value(),
-                'date': self.le_date.text().strip(),
+                'date': valid_date,
                 'image_path': image_path}
         try:
             self.db.insert_record(data)
@@ -112,6 +133,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
                                  f'не удалось добавить запись:\n{e}')
 
     def _on_delete(self):
+        #удаление записи
         select = self.tableWidget.selectionModel().selectedRows()
         if not select:
             QMessageBox.warning(self,
@@ -130,6 +152,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
                                     'запись удалена')
 
     def _on_load_image(self):
+        #загрузка изображений
         path, _ = QFileDialog.getOpenFileName(self,
                                               'выберите фотокарточку',
                                               '',
@@ -151,9 +174,11 @@ class MainWindow(QMainWindow, Ui_mainWindow):
                                  f'не удалось загрузить фотокарточку:\n{e}')
 
     def _on_close(self):
+        #закрытие через кнопку
         self.close()
 
     def _on_edit(self):
+        #редактирование записи
         select = self.tableWidget.selectionModel().selectedRows()
         if not select:
             QMessageBox.warning(self,
@@ -165,12 +190,26 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         if not current:
             return
         final_path = self.image_path if self.image_path is not None else current['image_path']
+
+        date_text = self.le_date.text().strip()
+        valid_date = None
+        if date_text:
+            fmt = '%Y-%m-%d'
+            try:
+                dt = datetime.strptime(date_text, fmt)
+                valid_date = dt.strftime(fmt)
+            except ValueError:
+                QMessageBox.warning(self,
+                                    'ошибка', f'даты не существует')
+                self.le_date.setFocus()
+                return
+
         data = {'id': self.tableWidget.item(row, 0).data(Qt.UserRole),
                 'name': self.le_name.text().strip(),
                 'type': self.le_type.text().strip(),
                 'color': self.le_color.text().strip(),
                 'stock': self.sb_stock.value(),
-                'date': self.le_date.text().strip(),
+                'date': valid_date,
                 'image_path': final_path}
         self.db.update_record(data)
         self._refresh_table()
@@ -184,6 +223,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
                                     'запись обновлена')
 
     def _on_select_row(self):
+        #заполнение формы при выборе строки
         select = self.tableWidget.selectionModel().selectedRows()
         if not select:
             return
@@ -205,10 +245,10 @@ class MainWindow(QMainWindow, Ui_mainWindow):
                 self.lbl_image.clear()
         else:
             self.lbl_image.clear()
-        self.le_type.setText(self.tableWidget.item(row, 0).text())
-        self.le_name.setText(self.tableWidget.item(row, 1).text())
-        self.le_color.setText(self.tableWidget.item(row, 3).text())
-        self.le_date.setText(self.tableWidget.item(row, 4).text())
+        self.le_type.setText(record['type'])
+        self.le_name.setText(record['name'])
+        self.le_color.setText(record['color'])
+        self.le_date.setText(record['date'])
 
         item = self.tableWidget.item(row, 2)
         if item:
@@ -220,6 +260,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
             self.sb_stock.setValue(0)
 
     def _refresh_table(self, order_by=None):
+        #обновление таблицы
         self.tableWidget.setRowCount(0)
         items = self.db.get_all(order_by)
         if items is None:
@@ -238,6 +279,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
             self.tableWidget.setItem(i, 4, QTableWidgetItem(j['date']))
 
     def _clear_fields(self):
+        #очистка полей
         self.le_type.clear()
         self.le_name.clear()
         self.le_date.clear()
@@ -246,6 +288,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.lbl_image.clear()
 
     def closeEvent(self, event):
+        #закрытие через крестик
         reply = QMessageBox.question(self,
                                      'выход',
                                      'вы точно хотите закрыть приложение?')
