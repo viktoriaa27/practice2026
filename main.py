@@ -1,17 +1,29 @@
 import sys
 import os
+import logging
 
 from datetime import datetime
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtGui import QImage, QPixmap, QKeySequence
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QHeaderView,
-    QMessageBox, QTableWidgetItem, QFileDialog
+    QMessageBox, QTableWidgetItem, QFileDialog, QShortcut
 )
 from PIL import Image
 
 from ui_main import Ui_mainWindow
 import database
+
+os.makedirs('logs', exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('logs/app.log', encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger('main')
 
 class MainWindow(QMainWindow, Ui_mainWindow):
     def __init__(self):
@@ -30,6 +42,8 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self._setup_ui()
         self._bind_signals()
         self._refresh_table()
+
+        logger.info('Приложение успешно запущено')
 
     def _setup_ui(self):
         #доработка конвертированного интерфейса
@@ -60,6 +74,13 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.btn_edit.clicked.connect(self._on_edit)
         self.comboBox.currentIndexChanged.connect(self._on_sort)
         self.tableWidget.itemSelectionChanged.connect(self._on_select_row)
+
+        #горячие клавиши
+        QShortcut(QKeySequence('Ctrl+K'), self).activated.connect(self._on_add)
+        QShortcut(QKeySequence('Del'), self).activated.connect(self._on_delete)
+        QShortcut(QKeySequence('Ctrl+L'), self).activated.connect(self._on_load_image)
+        QShortcut(QKeySequence('Ctrl+C'), self).activated.connect(self._on_close)
+        QShortcut(QKeySequence('Ctrl+E'), self).activated.connect(self._on_edit)
 
     def _on_sort(self, index):
         #сортировка записей
@@ -117,6 +138,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
                 'image_path': image_path}
         try:
             self.db.insert_record(data)
+            logger.info('Запись добавлена')
             self._refresh_table()
             if self.sb_stock.value() < 5:
                 QMessageBox.warning(self,
@@ -128,6 +150,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
                                         'запись добавлена')
             self._clear_fields()
         except Exception as e:
+            logger.error(f'Ошибка в добавлении записи: {e}')
             QMessageBox.critical(self,
                                  'ошибка',
                                  f'не удалось добавить запись:\n{e}')
@@ -147,6 +170,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
             self.db.delete_record(self.tableWidget.item(row, 0).data(Qt.UserRole))
             self._refresh_table()
             self._clear_fields()
+            logger.info('Запись удалена')
             QMessageBox.information(self,
                                     'ура?',
                                     'запись удалена')
@@ -161,14 +185,15 @@ class MainWindow(QMainWindow, Ui_mainWindow):
             return
         filename = os.path.basename(path)
         try:
-            with Image.open(path) as img:
-                img = img.convert('RGBA')
+                img = Image.open(path).convert('RGBA')
                 img.thumbnail((200, 200), Image.LANCZOS)
                 qt_image = QImage(img.tobytes(), img.width, img.height, QImage.Format_RGBA8888)
                 pixmap = QPixmap.fromImage(qt_image)
                 self.lbl_image.setPixmap(pixmap)
+                logger.info('Изображение добавлено')
                 self.image_path = os.path.join('images', filename)
         except Exception as e:
+            logger.error(f'Ошибка в загрузке изображения: {e}')
             QMessageBox.critical(self,
                                  'ошибка(',
                                  f'не удалось загрузить фотокарточку:\n{e}')
@@ -212,6 +237,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
                 'date': valid_date,
                 'image_path': final_path}
         self.db.update_record(data)
+        logger.info('Запись обновлена')
         self._refresh_table()
         if self.sb_stock.value() < 5:
             QMessageBox.warning(self,
@@ -233,6 +259,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         record = self.db.get_by(record_id)
         if not record:
             return
+        self.image_path = None
         img_path = record['image_path'] or ''
         if img_path and os.path.isfile(img_path):
             try:
@@ -242,6 +269,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
                 pixmap = QPixmap.fromImage(qt_image)
                 self.lbl_image.setPixmap(pixmap)
             except Exception:
+                logger.error('Изображение не добавлено на экран')
                 self.lbl_image.clear()
         else:
             self.lbl_image.clear()
@@ -293,6 +321,7 @@ class MainWindow(QMainWindow, Ui_mainWindow):
                                      'выход',
                                      'вы точно хотите закрыть приложение?')
         if reply == QMessageBox.Yes:
+            logger.info('Приложение закрыто')
             if hasattr(self, 'db'):
                 self.db.close()
             event.accept()
