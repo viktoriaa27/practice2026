@@ -22,6 +22,9 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.resize(850, 650)
         self.setMinimumSize(850, 650)
         self.setMaximumSize(1700, 1300)
+        self.setStyleSheet('QMainWindow {background-color: #F0E68C;}'
+                           'QTableWidget {gridline-color: #8DB76B;}'
+                           )
 
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.btn_add.setFixedSize(100, 40)
@@ -64,63 +67,88 @@ class MainWindow(QMainWindow, Ui_mainWindow):
 
     def _on_add(self):
         if not self.le_type.text().strip():
-            QMessageBox.warning(self, 'ошибка!', 'поле должно быть заполнено!')
+            QMessageBox.warning(self,
+                                'ошибка!',
+                                'поле должно быть заполнено!')
             self.le_type.setFocus()
             return
 
         if not self.le_name.text().strip():
-            QMessageBox.warning(self, 'ошибка!', 'поле должно быть заполнено!')
+            QMessageBox.warning(self,
+                                'ошибка!',
+                                'поле должно быть заполнено!')
             self.le_name.setFocus()
             return
 
         if self.sb_stock.value() < 0:
-            QMessageBox.warning(self, 'ошибка!', 'количество не может быть отрицательным')
+            QMessageBox.warning(self,
+                                'ошибка!',
+                                'количество не может быть отрицательным')
             self.sb_stock.setFocus()
             return
 
+        image_path = self.image_path
         data = {'name': self.le_name.text().strip(),
                 'type': self.le_type.text().strip(),
                 'color': self.le_color.text().strip(),
                 'stock': self.sb_stock.value(),
                 'date': self.le_date.text().strip(),
-                'image_path': self.image_path}
+                'image_path': image_path}
         try:
             self.db.insert_record(data)
             self._refresh_table()
             if self.sb_stock.value() < 5:
-                QMessageBox.warning(self, 'низкий остаток', 'пополните материал')
+                QMessageBox.warning(self,
+                                    'низкий остаток',
+                                    'пополните материал')
             else:
-                QMessageBox.information(self, 'ура!', 'запись добавлена')
+                QMessageBox.information(self,
+                                        'ура!',
+                                        'запись добавлена')
             self._clear_fields()
         except Exception as e:
-            QMessageBox.critical(self, 'ошибка', f'не удалось добавить запись:\n{e}')
+            QMessageBox.critical(self,
+                                 'ошибка',
+                                 f'не удалось добавить запись:\n{e}')
 
     def _on_delete(self):
         select = self.tableWidget.selectionModel().selectedRows()
         if not select:
-            QMessageBox.warning(self, 'внимание!', 'вы не выбрали строку!')
+            QMessageBox.warning(self,
+                                'внимание!',
+                                'вы не выбрали строку!')
             return
-        if QMessageBox.question(self, 'подтвердите выбор', 'вы точно хотите удалить данную запись?') == QMessageBox.Yes:
+        if QMessageBox.question(self,
+                                'подтвердите выбор',
+                                'вы точно хотите удалить данную запись?') == QMessageBox.Yes:
             row = select[0].row()
             self.db.delete_record(self.tableWidget.item(row, 0).data(Qt.UserRole))
             self._refresh_table()
             self._clear_fields()
-            QMessageBox.information(self, 'ура?', 'запись удалена')
+            QMessageBox.information(self,
+                                    'ура?',
+                                    'запись удалена')
 
     def _on_load_image(self):
-        path, _ = QFileDialog.getOpenFileName(self, 'выберите фотокарточку', '', 'Images (*.png *.jpg *.jpeg)')
+        path, _ = QFileDialog.getOpenFileName(self,
+                                              'выберите фотокарточку',
+                                              '',
+                                              'Images (*.png *.jpg *.jpeg)')
         if not path:
             return
         filename = os.path.basename(path)
         try:
-            img = Image.open(path).convert('RGBA')
-            img.thumbnail((200, 200), Image.LANCZOS)
-            qt_image = QImage(img.tobytes(), img.width, img.height, QImage.Format_RGBA8888)
-            pixmap = QPixmap.fromImage(qt_image)
-            self.lbl_image.setPixmap(pixmap)
-            self.image_path = os.path.join('images', filename)
+            with Image.open(path) as img:
+                img = img.convert('RGBA')
+                img.thumbnail((200, 200), Image.LANCZOS)
+                qt_image = QImage(img.tobytes(), img.width, img.height, QImage.Format_RGBA8888)
+                pixmap = QPixmap.fromImage(qt_image)
+                self.lbl_image.setPixmap(pixmap)
+                self.image_path = os.path.join('images', filename)
         except Exception as e:
-            QMessageBox.critical(self, 'ошибка(', f'не удалось загрузить фотокарточку:\n{e}')
+            QMessageBox.critical(self,
+                                 'ошибка(',
+                                 f'не удалось загрузить фотокарточку:\n{e}')
 
     def _on_close(self):
         self.close()
@@ -128,7 +156,9 @@ class MainWindow(QMainWindow, Ui_mainWindow):
     def _on_edit(self):
         select = self.tableWidget.selectionModel().selectedRows()
         if not select:
-            QMessageBox.warning(self, 'внимание!', 'вы не выбрали строку!')
+            QMessageBox.warning(self,
+                                'внимание!',
+                                'вы не выбрали строку!')
             return
         row = select[0].row()
         current = self.db.get_by(self.tableWidget.item(row, 0).data(Qt.UserRole))
@@ -145,9 +175,13 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.db.update_record(data)
         self._refresh_table()
         if self.sb_stock.value() < 5:
-            QMessageBox.warning(self, 'низкий остаток', 'пополните материал')
+            QMessageBox.warning(self,
+                                'низкий остаток',
+                                'пополните материал')
         else:
-            QMessageBox.information(self, 'успешно', 'запись обновлена')
+            QMessageBox.information(self,
+                                    'успешно',
+                                    'запись обновлена')
 
     def _on_select_row(self):
         select = self.tableWidget.selectionModel().selectedRows()
@@ -212,8 +246,12 @@ class MainWindow(QMainWindow, Ui_mainWindow):
         self.lbl_image.clear()
 
     def closeEvent(self, event):
-        reply = QMessageBox.question(self, 'выход', 'вы точно хотите закрыть приложение?')
+        reply = QMessageBox.question(self,
+                                     'выход',
+                                     'вы точно хотите закрыть приложение?')
         if reply == QMessageBox.Yes:
+            if hasattr(self, 'db'):
+                self.db.close()
             event.accept()
         else:
             event.ignore()

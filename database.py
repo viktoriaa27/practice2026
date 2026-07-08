@@ -11,7 +11,7 @@ class Database:
         cursor.execute('''CREATE TABLE IF NOT EXISTS accounting (
         id INTEGER PRIMARY KEY AUTOINCREMENT, 
         name TEXT NOT NULL, type TEXT NOT NULL, 
-        color TEXT , stock INTEGER NOT NUll, 
+        color TEXT, stock INTEGER NOT NUll, 
         date TEXT, image_path TEXT)''')
         self.base.commit()
 
@@ -19,21 +19,21 @@ class Database:
         cursor = self.base.cursor()
         columns = ['id', 'name', 'type', 'color', 'stock', 'date', 'image_path']
         directions = ['ASC', 'DESC']
+        query = '''SELECT * FROM accounting'''
         if order_type:
             parts = order_type.strip().split()
             if len(parts) == 2:
                 col, dir = parts
-                if col in columns and dir in directions:
-                    cursor.execute(
-                        f'''SELECT id, name, type, color, stock, date, image_path FROM accounting ORDER BY {col} {dir}''')
+                if col == 'color' and dir == 'ASC':
+                    cursor.execute('''SELECT * FROM accounting ORDER BY color ASC''')
+                elif col == 'color' and dir == 'DESC':
+                    cursor.execute('''SELECT * FROM accounting ORDER BY color DESC''')
                 else:
-                    pass
+                    cursor.execute('''SELECT * FROM accounting ORDER BY type''')
             else:
-                cursor.execute(
-                    f'''SELECT id, name, type, color, stock, date, image_path FROM accounting ORDER BY name''')
+                cursor.execute('''SELECT * FROM accounting ORDER BY name''')
         else:
-            cursor.execute(
-                f'''SELECT id, name, type, color, stock, date, image_path FROM accounting ORDER BY type''')
+            cursor.execute('''SELECT * FROM accounting ORDER BY type''')
         return cursor.fetchall()
 
     def delete_record(self, accounting_id):
@@ -55,3 +55,8 @@ class Database:
         cursor = self.base.cursor()
         cursor.execute('''SELECT * FROM accounting WHERE id=?''', (record_id,))
         return cursor.fetchone()
+
+    def close(self):
+        if self.base:
+            self.base.close()
+            self.base = None
